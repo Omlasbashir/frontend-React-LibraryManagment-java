@@ -2,6 +2,7 @@ import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import api from "../services/api";
 
 export default function Users() {
 
@@ -16,7 +17,7 @@ export default function Users() {
 
     const load_Users = async () => {
         try {
-            const { data } = await axios.get("https://localhost:7019/api/User");
+            const { data } = await api.get(`/User`);
             if (data.status) setUsers(data.data);
             else console.log(data.message);
         } catch (e) { console.log(e); }
@@ -47,10 +48,10 @@ export default function Users() {
             let response;
 
             if (registerStatus == "Register") {
-                response = await axios.post( "https://localhost:7019/api/User", postData);
+                response = await api.post(`/User`, postData);
             } else if (registerStatus == "Update") {
                 postData.UserId = userId;
-                response = await axios.put( "https://localhost:7019/api/User",  postData );
+                response = await api.put(`/User`, postData);
             }
             let result = response.data;
             if (result.status) {
@@ -69,7 +70,7 @@ export default function Users() {
     const fill_UserData = async (e, id) => {
         e.preventDefault();
         try {
-            const { data } = await axios.get(`https://localhost:7019/api/User/${id}`);
+            const { data } = await api.get(`/User/${id}`);
             if (data.status) {
                 setUserId(data.data.userId);
                 setFullName(data.data.fullName);
@@ -86,7 +87,7 @@ export default function Users() {
         e.preventDefault();
         if (!confirm(`Delete user: ${name}?`)) return;
         try {
-            const { data } = await axios.delete(`https://localhost:7019/api/User/${id}`);
+            const { data } = await api.delete(`/User/${id}`);
             data.status ? load_Users() : alert(`Error: ${data.message}`);
         } catch (e) { console.log(e); }
     };

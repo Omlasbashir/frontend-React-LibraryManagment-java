@@ -2,6 +2,7 @@ import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import api from "../services/api";
 
 export default function BorrowTransactions() {
 
@@ -58,10 +59,10 @@ export default function BorrowTransactions() {
             let response;
 
             if (registerStatus === "Register") {
-                response = await axios.post(`https://localhost:7019/api/BorrowTransactions`, postData);
+                response = await api.post(`/BorrowTransactions`, postData);
             } else if (registerStatus === "Update") {
                 postData.borrowId = borrowId;
-                response = await axios.put(`https://localhost:7019/api/BorrowTransactions`, postData);
+                response = await api.put(`/BorrowTransactions`, postData);
             }
 
             let result = response.data;
@@ -78,7 +79,7 @@ export default function BorrowTransactions() {
     const fill_BorrowData = async (e, borrowId) => {
         e.preventDefault();
         try {
-            const response = await axios.get(`https://localhost:7019/api/BorrowTransactions/${borrowId}`);
+            const response = await api.get(`/BorrowTransactions/${borrowId}`);
             const result = response.data;
             if (result.status) {
                 setBorrowId(result.data.borrowId);
@@ -99,7 +100,7 @@ export default function BorrowTransactions() {
     //load borrows
     const load_Borrows = async () => {
         try {
-            const response = await axios.get(`https://localhost:7019/api/BorrowTransactions`);
+            const response = await api.get(`/BorrowTransactions`);
             const result = response.data;
             if (result.status) {
                 setBorrows(result.data);
@@ -113,7 +114,7 @@ export default function BorrowTransactions() {
     //load from members
     const load_Members = async () => {
         try {
-            const response = await axios.get(`https://localhost:7019/api/Members`);
+            const response = await api.get(`/Members`);
             const result = response.data;
             if (result.status) {
                 setMembers(result.data);
@@ -125,7 +126,7 @@ export default function BorrowTransactions() {
     //load from books
     const load_Books = async () => {
         try {
-            const response = await axios.get(`https://localhost:7019/api/Books`);
+            const response = await api.get(`/Books`);
             const result = response.data;
             if (result.status) {
                 setBooks(result.data);
@@ -141,7 +142,7 @@ export default function BorrowTransactions() {
         try {
             const sure = confirm(`Are you sure you want to delete this borrow record?`);
             if (sure) {
-                const response = await axios.delete(`https://localhost:7019/api/BorrowTransactions/${borrowId}`);
+                const response = await api.delete(`/BorrowTransactions/${borrowId}`);
                 const result = response.data;
                 if (result.status) {
                     alert(`Success: ${result.message}`);

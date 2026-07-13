@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+import api from "../services/api";
 export default function Categories() {
     //search
     const [search, setSearch] = useState("");
@@ -37,10 +38,10 @@ export default function Categories() {
             let response
             
             if(registerStatus == "Register"){
-                response = await axios.post(`https://localhost:7019/api/Categories`, postData) 
+                response = await api.post(`/Categories`, postData) 
             }else if(registerStatus == "Update"){
                 postData.categoryId = categoryId
-                response = await axios.put(`https://localhost:7019/api/Categories`, postData)
+                response = await api.put(`/Categories`, postData)
             }
             let result = response.data
             if(result.status){
@@ -58,7 +59,7 @@ export default function Categories() {
     const fill_CategoryDate = async (e, categoryId) => {
         e.preventDefault();
         try {
-            const response = await axios.get(`https://localhost:7019/api/Categories/${categoryId}`)
+            const response = await api.get(`/Categories/${categoryId}`)
             const result = response.data
             if(result.status){
                 setCategoryId(result.data.categoryId);
@@ -75,7 +76,7 @@ export default function Categories() {
     //lading categories store usesate
     const load_Categories = async () => {
         try {
-            const response = await axios.get(`  https://localhost:7019/api/Categories`)
+            const response = await api.get(`/Categories`)
             const result = response.data
             if(result.status){
                 setCategories(result.data)
@@ -95,7 +96,7 @@ export default function Categories() {
     try {
         const sure = confirm(`Are you sure you want to delete category: ${categoryName}?`);
         if (sure) {
-            const response = await axios.delete( `https://localhost:7019/api/Categories/${categoryId}`);
+            const response = await api.delete(`/Categories/${categoryId}`);
             const result = response.data;
             if (result.status) {     
                 alert(`Success: ${result.message}`);

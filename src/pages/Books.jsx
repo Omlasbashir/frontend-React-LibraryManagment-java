@@ -2,6 +2,7 @@ import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import api from "../services/api";
 
 export default function Books() {
 
@@ -50,10 +51,10 @@ export default function Books() {
             let response;
 
             if (registerStatus === "Register") {
-                response = await axios.post(`https://localhost:7019/api/Books`, postData);
+                response = await api.post(`/Books`, postData);
             } else if (registerStatus === "Update") {
                 postData.bookId = bookId;
-                response = await axios.put(`https://localhost:7019/api/Books`, postData);
+                response = await api.put(`/Books`, postData);
             }
 
             let result = response.data;
@@ -71,7 +72,7 @@ export default function Books() {
     const fill_BookData = async (e, bookId) => {
         e.preventDefault();
         try {
-            const response = await axios.get(`https://localhost:7019/api/Books/${bookId}`);
+            const response = await api.get(`/Books/${bookId}`);
             const result = response.data;
             if (result.status) {
                 setBookId(result.data.bookId);
@@ -92,7 +93,7 @@ export default function Books() {
     // loading books -> store in usestate
     const load_Books = async () => {
         try {
-            const response = await axios.get(`https://localhost:7019/api/Books`);
+            const response = await api.get(`/Books`);
             const result = response.data;
             if (result.status) {
                 setBooks(result.data);
@@ -107,7 +108,7 @@ export default function Books() {
     // loading categories -> for dropdown
     const load_Categories = async () => {
         try {
-            const response = await axios.get(`https://localhost:7019/api/Categories`);
+            const response = await api.get(`/Categories`);
             const result = response.data;
             if (result.status) {
                 setCategories(result.data);
@@ -126,7 +127,7 @@ export default function Books() {
         try {
             const sure = confirm(`Are you sure you want to delete book: ${title}?`);
             if (sure) {
-                const response = await axios.delete(`https://localhost:7019/api/Books/${bookId}`);
+                const response = await api.delete(`/Books/${bookId}`);
                 const result = response.data;
                 if (result.status) {
                     alert(`Success: ${result.message}`);

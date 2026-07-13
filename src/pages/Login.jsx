@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
-
+import api from "../services/api";
 export default function Login() {
 
     const navigate = useNavigate();
@@ -29,7 +29,7 @@ export default function Login() {
         e.preventDefault();
         setLoading(true);
         try {
-            const { data } = await axios.get(`https://localhost:7019/api/User`);
+            const { data } = await api.get(`/User`);
             if (data.status) {
                 const foundUser = data.data.find(
                     (u) =>
@@ -59,7 +59,7 @@ export default function Login() {
     const handleForgot = async (e) => {
         e.preventDefault();
         try {
-            const { data } = await axios.get(`https://localhost:7019/api/Users`);
+            const { data } = await api.get(`/Users`);
             if (data.status) {
                 const found = data.data.find(
                     (u) => u.email?.toLowerCase() === forgotEmail.trim().toLowerCase()
@@ -97,7 +97,7 @@ export default function Login() {
                 PasswordHash: regPassword,
                 Role:         "Staff",   // default role
             };
-            const { data } = await axios.post(`https://localhost:7019/api/User`, postData);
+            const { data } = await api.post(`/User`, postData);
             if (data.status) {
                 Swal.fire({ icon: "success", title: "Account Created!",
                     text: "You can now login with your new account.", confirmButtonColor: "#3b82f6" });

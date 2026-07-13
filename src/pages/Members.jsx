@@ -2,6 +2,7 @@ import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import api from "../services/api";
 
 export default function Members() {
 
@@ -38,10 +39,10 @@ export default function Members() {
             let response;
 
             if (registerStatus === "Register") {
-                response = await axios.post(`https://localhost:7019/api/Members`, postData);
+                response = await api.post(`/Members`, postData);
             } else if (registerStatus === "Update") {
                 postData.memberId = memberId;
-                response = await axios.put(`https://localhost:7019/api/Members`, postData);
+                response = await api.put(`/Members`, postData);
             }
 
             let result = response.data;
@@ -58,7 +59,7 @@ export default function Members() {
     const fill_MemberData = async (e, memberId) => {
         e.preventDefault();
         try {
-            const response = await axios.get(`https://localhost:7019/api/Members/${memberId}`);
+            const response = await api.get(`/Members/${memberId}`);
             const result = response.data;
             if (result.status) {
                 setMemberId(result.data.memberId);
@@ -77,7 +78,7 @@ export default function Members() {
 
     const load_Members = async () => {
         try {
-            const response = await axios.get(`https://localhost:7019/api/Members`);
+            const response = await api.get(`/Members`);
             const result = response.data;
             if (result.status) {
                 setMembers(result.data);
@@ -94,7 +95,7 @@ export default function Members() {
         try {
             const sure = confirm(`Are you sure you want to delete member: ${fullName}?`);
             if (sure) {
-                const response = await axios.delete(`https://localhost:7019/api/Members/${memberId}`);
+                const response = await api.delete(`/Members/${memberId}`);
                 const result = response.data;
                 if (result.status) {
                     alert(`Success: ${result.message}`);

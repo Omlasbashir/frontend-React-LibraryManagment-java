@@ -2,7 +2,7 @@ import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
 import axios from "axios";
-
+import api from "../services/api";
 export default function Dashboard() {
 
     const [totalBooks, setTotalBooks]           = useState(0);
@@ -19,10 +19,10 @@ export default function Dashboard() {
         const load = async () => {
             try {
                 const [booksRes, membersRes, borrowsRes, catsRes] = await Promise.all([
-                    axios.get("https://localhost:7019/api/Books"),
-                    axios.get("https://localhost:7019/api/Members"),
-                    axios.get("https://localhost:7019/api/BorrowTransactions"),
-                    axios.get("https://localhost:7019/api/Categories"),
+                    api.get(`/Books`),
+                    api.get(`/Members`),
+                    api.get(`/BorrowTransactions`),
+                    api.get(`/Categories`),
                 ]);
                 if (booksRes.data.status)   { setTotalBooks(booksRes.data.data.length); setBooks(booksRes.data.data); }
                 if (membersRes.data.status) { setTotalMembers(membersRes.data.data.length); setMembers(membersRes.data.data); }
