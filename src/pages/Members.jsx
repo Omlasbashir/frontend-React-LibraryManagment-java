@@ -27,85 +27,75 @@ export default function Members() {
         setRegisterStatus("Register");
     };
 
-    const register_New_Member = async (e) => {
-        e.preventDefault();
-        try {
-            let postData = {
-                "fullName": fullName,
-                "email": email,
-                "phone": phone,
-                "address": address,
-            };
-            let response;
-
-            if (registerStatus === "Register") {
-                response = await api.post(`/Members`, postData);
-            } else if (registerStatus === "Update") {
-                postData.memberId = memberId;
-                response = await api.put(`/Members`, postData);
-            }
-
-            let result = response.data;
-            if (result.status) {
-                ClearData();
-            } else {
-                alert(`Error: ${result.message}`);
-            }
-        } catch (error) {
-            console.log(`Exception: ${error}`);
-        }
-    };
-
-    const fill_MemberData = async (e, memberId) => {
-        e.preventDefault();
-        try {
-            const response = await api.get(`/Members/${memberId}`);
-            const result = response.data;
-            if (result.status) {
-                setMemberId(result.data.memberId);
-                setFullName(result.data.fullName);
-                setEmail(result.data.email);
-                setPhone(result.data.phone);
-                setAddress(result.data.address);
-                setRegisterStatus("Update");
-            } else {
-                console.log(result.message);
-            }
-        } catch (error) {
-            console.log(`Exception: ${error}`);
-        }
-    };
-
+   // Load Members
     const load_Members = async () => {
         try {
-            const response = await api.get(`/Members`);
-            const result = response.data;
-            if (result.status) {
-                setMembers(result.data);
-            } else {
-                console.log(result.message);
-            }
+            const response = await api.get("/members");
+
+            const data = response.data.data || response.data;
+            setMembers(Array.isArray(data) ? data : []);
         } catch (error) {
-            console.log(`Exception: ${error}`);
+            console.log(error);
         }
     };
 
+    // Get Member By Id
+    const fill_MemberData = async (e, memberId) => {
+        e.preventDefault();
+
+        try {
+            const response = await api.get(`/members/${memberId}`);
+
+            const member = response.data.data || response.data;
+
+            setMemberId(member.memberId);
+            setFullName(member.fullName);
+            setEmail(member.email);
+            setPhone(member.phone);
+            setAddress(member.address);
+
+            setRegisterStatus("Update");
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    // Register / Update
+    const register_New_Member = async (e) => {
+        e.preventDefault();
+
+        const postData = {
+            fullName,
+            email,
+            phone,
+            address
+        };
+
+        try {
+            if (registerStatus === "Register") {
+                await api.post("/members", postData);
+            } else {
+                await api.put(`/members/${memberId}`, postData);
+            }
+
+            ClearData();
+            load_Members();
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    // Delete
     const remove_Member = async (e, fullName, memberId) => {
         e.preventDefault();
+
+        if (!confirm(`Delete ${fullName}?`)) return;
+
         try {
-            const sure = confirm(`Are you sure you want to delete member: ${fullName}?`);
-            if (sure) {
-                const response = await api.delete(`/Members/${memberId}`);
-                const result = response.data;
-                if (result.status) {
-                    alert(`Success: ${result.message}`);
-                    load_Members();
-                } else {
-                    alert(`Error: ${result.message}`);
-                }
-            }
+            await api.delete(`/members/${memberId}`);
+            load_Members();
         } catch (error) {
-            console.log(`Exception: ${error}`);
+            console.log(error);
         }
     };
     useEffect(() => {

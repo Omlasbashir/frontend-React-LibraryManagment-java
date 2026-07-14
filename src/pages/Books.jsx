@@ -1,7 +1,6 @@
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
-import axios from "axios";
 import api from "../services/api";
 
 export default function Books() {
@@ -32,112 +31,168 @@ export default function Books() {
         setIsbn("");
         setCategoryId("");
         setQuantity(0);
-        load_Books();
         setRegisterStatus("Register");
     };
 
     // register new book / update book
     const register_New_Book = async (e) => {
         e.preventDefault();
+
         try {
-            let postData = {
-                "title": title,
-                "author": author,
-                "isbn": isbn,
-                "categoryId": categoryId,
-                "quantity": quantity,
+
+            const postData = {
+                title: title,
+                author: author,
+                isbn: isbn,
+                categoryId: categoryId,
+                quantity: quantity,
             };
 
-            let response;
 
             if (registerStatus === "Register") {
-                response = await api.post(`/Books`, postData);
-            } else if (registerStatus === "Update") {
-                postData.bookId = bookId;
-                response = await api.put(`/Books`, postData);
+
+                await api.post(
+                    "/books",
+                    postData
+                );
+
+            } else {
+
+                await api.put(
+                    `/books/${bookId}`,
+                    postData
+                );
+
             }
 
-            let result = response.data;
-            if (result.status) {
-                ClearData();
-            } else {
-                alert(`error: ${result.message}`);
-            }
+
+            alert("Success");
+            ClearData();
+            load_Books();
+
+
         } catch (error) {
-            console.log(`exeptian: ${error}`);
+
+            console.log(error);
+
         }
     };
 
     // fill book data for update
-    const fill_BookData = async (e, bookId) => {
+    const fill_BookData = async (e, id) => {
+
         e.preventDefault();
+
         try {
-            const response = await api.get(`/Books/${bookId}`);
-            const result = response.data;
-            if (result.status) {
-                setBookId(result.data.bookId);
-                setTitle(result.data.title);
-                setAuthor(result.data.author);
-                setIsbn(result.data.isbn);
-                setCategoryId(result.data.categoryId);
-                setQuantity(result.data.quantity);
-                setRegisterStatus("Update");
-            } else {
-                console.log(result.message);
-            }
+
+            const response = await api.get(
+                `/books/${id}`
+            );
+
+
+            setBookId(
+                response.data.bookId
+            );
+
+            setTitle(
+                response.data.title
+            );
+
+            setAuthor(
+                response.data.author
+            );
+
+            setIsbn(
+                response.data.isbn
+            );
+
+            setCategoryId(
+                response.data.categoryId
+            );
+
+            setQuantity(
+                response.data.quantity
+            );
+
+            setRegisterStatus("Update");
+
+
         } catch (error) {
-            console.log(`exeptian: ${error}`);
+
+            console.log(error);
+
         }
     };
 
     // loading books -> store in usestate
     const load_Books = async () => {
+
         try {
-            const response = await api.get(`/Books`);
-            const result = response.data;
-            if (result.status) {
-                setBooks(result.data);
-            } else {
-                console.log(result.message);
-            }
+
+            const response = await api.get(
+                "/books"
+            );
+
+
+            setBooks(response.data);
+
+
         } catch (error) {
-            console.log(`exeptian: ${error}`);
+
+            console.log(error);
+
         }
     };
 
     // loading categories -> for dropdown
     const load_Categories = async () => {
+
         try {
-            const response = await api.get(`/Categories`);
-            const result = response.data;
-            if (result.status) {
-                setCategories(result.data);
-            } else {
-                console.log(result.message);
-            }
+
+            const response = await api.get(
+                "/categories"
+            );
+
+
+            setCategories(response.data);
+
+
         } catch (error) {
-            console.log(`exeptian: ${error}`);
+
+            console.log(error);
+
         }
     };
 
     // delete book
-    const remove_book = async (e, title, bookId) => {
+    const remove_book = async (e, id, title) => {
+
         e.preventDefault();
 
-        try {
-            const sure = confirm(`Are you sure you want to delete book: ${title}?`);
-            if (sure) {
-                const response = await api.delete(`/Books/${bookId}`);
-                const result = response.data;
-                if (result.status) {
-                    alert(`Success: ${result.message}`);
-                    load_Books();
-                } else {
-                    alert(`Error: ${result.message}`);
-                }
+        const confirmDelete = confirm(
+            `Delete ${title}?`
+        );
+
+        if (confirmDelete) {
+
+            try {
+
+                await api.delete(
+                    `/books/${id}`
+                );
+
+
+                alert("Deleted Successfully");
+
+                load_Books();
+
+
+            } catch (error) {
+
+                console.log(error);
+
             }
-        } catch (error) {
-            console.log(`Exception: ${error}`);
+
         }
     };
 
@@ -148,7 +203,7 @@ export default function Books() {
 
     //search
     const filteredBooks = books.filter((book) =>
-        book.title.toLowerCase().includes(search.toLowerCase())
+        book.title?.toLowerCase().includes(search.toLowerCase())
     );
 
     return (
@@ -202,6 +257,7 @@ export default function Books() {
                                 </label>
                                 <input
                                     type="text"
+                                    required
                                     placeholder="Enter book title..."
                                     onChange={(e) => setTitle(e.target.value)}
                                     value={title}
@@ -215,6 +271,7 @@ export default function Books() {
                                 </label>
                                 <input
                                     type="text"
+                                    required
                                     placeholder="Enter author name..."
                                     onChange={(e) => setAuthor(e.target.value)}
                                     value={author}
@@ -228,6 +285,7 @@ export default function Books() {
                                 </label>
                                 <input
                                     type="text"
+                                    required
                                     placeholder="Enter ISBN..."
                                     onChange={(e) => setIsbn(e.target.value)}
                                     value={isbn}
@@ -243,11 +301,15 @@ export default function Books() {
                                 <label className="block mb-2 text-sm font-semibold text-gray-700">
                                     CategoryId
                                 </label>
-                                <select value={categoryId}  onChange={(e) => setCategoryId(e.target.value)}className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <select
+                                    value={categoryId}
+                                    onChange={(e) => setCategoryId(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
+                                >
                                     <option value="">Select category</option>
                                     {categories.map((cat) => (
                                         <option key={cat.categoryId} value={cat.categoryId}>
-                                            {cat.categoryId} 
+                                            {cat.categoryId} - {cat.categoryName}
                                         </option>
                                     ))}
                                 </select>
@@ -271,7 +333,7 @@ export default function Books() {
                                 <button type="submit" className="bg-gray-900 hover:bg-gray-700 text-white px-6 py-3 rounded-lg w-full">
                                     {registerStatus === "Register" ? "Add Book" : "Update Book"}
                                 </button>
-                                <button type="button" onClick={ClearData} className="bg-gray-900 hover:bg-gray-600 text-white px-6 py-3 rounded-lg w-full">
+                                <button type="button" onClick={ClearData} className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg w-full">
                                     Clear
                                 </button>
                             </div>
@@ -322,7 +384,7 @@ export default function Books() {
 
                                             <button
                                                 className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-                                                onClick={(e) => remove_book(e, book.title, book.bookId)}> Delete
+                                                onClick={(e) => remove_book(e, book.bookId, book.title)}> Delete
                                             </button>
                                         </td>
 

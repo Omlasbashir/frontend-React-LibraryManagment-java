@@ -21,16 +21,17 @@ export default function BorrowTransactions() {
 
     const [registerStatus, setRegisterStatus] = useState("Register");
     const [borrows, setBorrows] = useState([]);
+   
 
-    const getMemberName = (id) => {
-        const member = members.find(x => x.memberId == id);
-        return member ? member.fullName : "";
-    }
-
-    const getBookTitle = (bId) => {
-        const found = books.find((b) => Number(b.bookId) === Number(bId));
-        return found ? found.title : bId;
+    const getMemberName = (borrow) => {
+        return borrow.member?.fullName || "";
     };
+
+
+    const getBookTitle = (borrow) => {
+        return borrow.book?.title || "";
+    };
+
 
     const ClearData = () => {
         setBorrowId(0);
@@ -40,120 +41,155 @@ export default function BorrowTransactions() {
         setReturnDate("");
         setDueDate("");
         setStatus("Borrowed");
-        load_Borrows();
         setRegisterStatus("Register");
+        load_Borrows();
     };
-    //register new borrow and update
+
+
+    // REGISTER + UPDATE
     const register_New_Borrow = async (e) => {
+
         e.preventDefault();
+
         try {
-            let postData = {
-                "memberId":   memberId,
-                "bookId":     bookId,
-                "borrowDate": borrowDate,
-                "returnDate": returnDate,
-                "dueDate":    dueDate,
-                "status":     status,
+
+            const postData = {
+                member: {
+                    memberId: Number(memberId)
+                },
+                book: {
+                    bookId: Number(bookId)
+                },
+                borrowDate,
+                dueDate,
+                returnDate,
+                status
             };
 
-            let response;
 
-            if (registerStatus === "Register") {
-                response = await api.post(`/BorrowTransactions`, postData);
-            } else if (registerStatus === "Update") {
-                postData.borrowId = borrowId;
-                response = await api.put(`/BorrowTransactions`, postData);
+            if(registerStatus === "Register"){
+
+                await api.post("/BorrowTransactions", postData);
+
+            }else{
+
+                await api.put(`/BorrowTransactions/${borrowId}`, postData);
+
             }
 
-            let result = response.data;
-            if (result.status) {
-                ClearData();
-            } else {
-                alert(`Error: ${result.message}`);
-            }
-        } catch (error) {
-            console.log(`Exception: ${error}`);
+
+            alert("Success");
+            ClearData();
+
+
+        }catch(error){
+
+            console.log(error);
+
         }
     };
-    //fill borrow data for update
-    const fill_BorrowData = async (e, borrowId) => {
+
+
+
+    // GET ONE
+    const fill_BorrowData = async (e,id)=>{
+
         e.preventDefault();
-        try {
-            const response = await api.get(`/BorrowTransactions/${borrowId}`);
-            const result = response.data;
-            if (result.status) {
-                setBorrowId(result.data.borrowId);
-                setMemberId(result.data.memberId);
-                setBookId(result.data.bookId);
-                setBorrowDate(result.data.borrowDate?.substring(0, 10));
-                setReturnDate(result.data.returnDate?.substring(0, 10));
-                setDueDate(result.data.dueDate?.substring(0, 10));
-                setStatus(result.data.status);
-                setRegisterStatus("Update");
-            } else {
-                console.log(result.message);
-            }
-        } catch (error) {
-            console.log(`Exception: ${error}`);
+
+        try{
+
+            const response = await api.get(`/BorrowTransactions/${id}`);
+
+            const data = response.data.data; // muhiim
+
+            setBorrowId(data.borrowId);
+            setMemberId(data.member?.memberId || "");
+            setBookId(data.book?.bookId || "");
+            setBorrowDate(data.borrowDate?.substring(0,10));
+            setDueDate(data.dueDate?.substring(0,10));
+            setReturnDate(data.returnDate?.substring(0,10));
+            setStatus(data.status);
+
+            setRegisterStatus("Update");
+
+
+        }catch(error){
+
+            console.log(error);
+
         }
+
     };
-    //load borrows
+
+
+
+    // GET ALL
     const load_Borrows = async () => {
         try {
-            const response = await api.get(`/BorrowTransactions`);
-            const result = response.data;
-            if (result.status) {
-                setBorrows(result.data);
-            } else {
-                console.log(result.message);
-            }
-        } catch (error) {
-            console.log(`Exception: ${error}`);
-        }
-    };
-    //load from members
-    const load_Members = async () => {
-        try {
-            const response = await api.get(`/Members`);
-            const result = response.data;
-            if (result.status) {
-                setMembers(result.data);
-            }
-        } catch (error) {
-            console.log(`Exception: ${error}`);
-        }
-    };
-    //load from books
-    const load_Books = async () => {
-        try {
-            const response = await api.get(`/Books`);
-            const result = response.data;
-            if (result.status) {
-                setBooks(result.data);
-            }
-        } catch (error) {
-            console.log(`Exception: ${error}`);
+            const response = await api.get("/BorrowTransactions");
+
+            setBorrows(response.data || []);
+
+        } catch(error){
+            console.log(error);
+            setBorrows([]);
         }
     };
 
-    //delete borrow
-    const remove_Borrow = async (e, borrowId) => {
-        e.preventDefault();
+
+
+    const load_Members = async () => {
         try {
-            const sure = confirm(`Are you sure you want to delete this borrow record?`);
-            if (sure) {
-                const response = await api.delete(`/BorrowTransactions/${borrowId}`);
-                const result = response.data;
-                if (result.status) {
-                    alert(`Success: ${result.message}`);
-                    load_Borrows();
-                } else {
-                    alert(`Error: ${result.message}`);
-                }
-            }
-        } catch (error) {
-            console.log(`Exception: ${error}`);
+            const response = await api.get("/members");
+
+            setMembers(response.data || []);
+
+        } catch(error){
+            console.log(error);
+            setMembers([]);
         }
+    };
+
+
+
+    const load_Books = async () => {
+        try {
+            const response = await api.get("/books");
+
+            setBooks(response.data || []);
+
+        } catch(error){
+            console.log(error);
+            setBooks([]);
+        }
+    };
+
+
+
+    // DELETE
+    const remove_Borrow = async(e,id)=>{
+
+        e.preventDefault();
+
+        if(confirm("Delete this borrow?")){
+
+            try{
+
+                await api.delete(`/BorrowTransactions/${id}`);
+
+                alert("Deleted Successfully");
+
+                load_Borrows();
+
+
+            }catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
     };
 
     useEffect(() => {
@@ -163,7 +199,7 @@ export default function BorrowTransactions() {
     }, []);
 
     const filteredBorrows = borrows.filter((borrow) =>
-        getMemberName(borrow.memberId)
+        getMemberName(borrow)
             .toLowerCase()
             .includes(search.toLowerCase())
     );
@@ -302,61 +338,77 @@ export default function BorrowTransactions() {
                             </thead>
 
                             <tbody>
-                                {filteredBorrows.map((borrow) => (
-                                    <tr key={borrow.borrowId} className="border-b hover:bg-gray-50">
 
-                                        <td className="p-3">{borrow.borrowId}</td>
+                                {filteredBorrows.map((borrow)=>(
 
-                                        <td className="p-3 font-semibold text-gray-800">
-                                            {getMemberName(borrow.memberId)}
-                                        </td>
+                                <tr key={borrow.borrowId} className="border-b hover:bg-gray-50">
 
-                                        <td className="p-3 text-gray-600">
-                                            {getBookTitle(borrow.bookId)}
-                                        </td>
+                                <td className="p-3">
+                                    {borrow.borrowId}
+                                </td>
 
-                                        <td className="p-3 text-gray-500">
-                                            {borrow.borrowDate?.substring(0, 10)}
-                                        </td>
 
-                                        {/* ✅ DueDate column */}
-                                        <td className="p-3 text-gray-500">
-                                            {borrow.dueDate?.substring(0, 10)}
-                                        </td>
+                                <td className="p-3 font-semibold text-gray-800">
+                                    {getMemberName(borrow)}
+                                </td>
 
-                                        <td className="p-3 text-gray-500">
-                                            {borrow.returnDate?.substring(0, 10)}
-                                        </td>
 
-                                        <td className="p-3">
-                                            <span className={`px-2 py-1 rounded text-sm font-medium
-                                                ${borrow.status === "Returned"
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-yellow-100 text-yellow-700"
-                                                }`}>
-                                                {borrow.status}
-                                            </span>
-                                        </td>
+                                <td className="p-3 text-gray-600">
+                                    {getBookTitle(borrow)}
+                                </td>
 
-                                        <td className="p-3 flex justify-center gap-2">
-                                            <button
-                                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
-                                                onClick={(e) => fill_BorrowData(e, borrow.borrowId)}
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-                                                onClick={(e) => remove_Borrow(e, borrow.borrowId)}
-                                            >
-                                                Delete
-                                            </button>
-                                        </td>
 
-                                    </tr>
+                                <td className="p-3 text-gray-500">
+                                    {borrow.borrowDate?.substring(0,10)}
+                                </td>
+
+
+                                <td className="p-3 text-gray-500">
+                                    {borrow.dueDate?.substring(0,10)}
+                                </td>
+
+
+                                <td className="p-3 text-gray-500">
+                                    {borrow.returnDate?.substring(0,10)}
+                                </td>
+
+
+                                <td className="p-3">
+                                <span className={`px-2 py-1 rounded text-sm font-medium
+                                ${borrow.status === "Returned"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-yellow-100 text-yellow-700"
+                                }`}>
+                                {borrow.status}
+                                </span>
+                                </td>
+
+
+                                <td className="p-3 flex justify-center gap-2">
+
+                                <button
+                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
+                                onClick={(e)=>fill_BorrowData(e,borrow.borrowId)}
+                                >
+                                Edit
+                                </button>
+
+
+                                <button
+                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                                onClick={(e)=>remove_Borrow(e,borrow.borrowId)}
+                                >
+                                Delete
+                                </button>
+
+                                </td>
+
+
+                                </tr>
+
                                 ))}
-                            </tbody>
 
+                                </tbody>
                         </table>
 
                     </div>

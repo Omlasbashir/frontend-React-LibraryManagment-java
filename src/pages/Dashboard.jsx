@@ -15,14 +15,16 @@ export default function Dashboard() {
 
     const user = JSON.parse(localStorage.getItem("user") || "{}");
 
+    console.log("USER DATA:", user);
+
     useEffect(() => {
         const load = async () => {
             try {
                 const [booksRes, membersRes, borrowsRes, catsRes] = await Promise.all([
-                    api.get(`/Books`),
-                    api.get(`/Members`),
-                    api.get(`/BorrowTransactions`),
-                    api.get(`/Categories`),
+                    api.get(`/books`),
+                    api.get(`/members`),
+                    api.get(`/borrowTransactions`),
+                    api.get(`/categories`),
                 ]);
                 if (booksRes.data.status)   { setTotalBooks(booksRes.data.data.length); setBooks(booksRes.data.data); }
                 if (membersRes.data.status) { setTotalMembers(membersRes.data.data.length); setMembers(membersRes.data.data); }

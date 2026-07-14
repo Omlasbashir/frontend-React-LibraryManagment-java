@@ -17,48 +17,11 @@ export default function Users() {
 
     const load_Users = async () => {
         try {
-            const { data } = await api.get(`/User`);
-            if (data.status) setUsers(data.data);
-            else console.log(data.message);
-        } catch (e) { console.log(e); }
-    };
 
-    useEffect(() => { load_Users(); }, []);
+            const response = await api.get(`/user`);
 
-    const ClearData = () => {
-        setUserId(0); setFullName(""); 
-        setEmail("");
-        setPassword(""); setRole("Admin");
-        setRegisterStatus("Register"); 
-        load_Users();
-    };
+            setUsers(response.data);
 
-    const register_New_User = async (e) => {
-        e.preventDefault();
-
-        try {
-
-            let postData = {
-                "FullName": FullName,
-                "Email": email,
-                "PasswordHash": password,
-                "Role": role
-            };
-
-            let response;
-
-            if (registerStatus == "Register") {
-                response = await api.post(`/User`, postData);
-            } else if (registerStatus == "Update") {
-                postData.UserId = userId;
-                response = await api.put(`/User`, postData);
-            }
-            let result = response.data;
-            if (result.status) {
-                ClearData();
-            } else {
-                alert(`Error: ${result.message}`);
-            }
         } catch (error) {
 
             console.log(error);
@@ -67,29 +30,132 @@ export default function Users() {
     };
 
 
-    const fill_UserData = async (e, id) => {
+    useEffect(() => {
+        load_Users();
+    }, []);
+
+
+
+    const register_New_User = async (e) => {
+
         e.preventDefault();
+
         try {
-            const { data } = await api.get(`/User/${id}`);
-            if (data.status) {
-                setUserId(data.data.userId);
-                setFullName(data.data.fullName);
-                setEmail(data.data.email);
-                setPassword("");
-                setRole(data.data.role);
-                setRegisterStatus("Update");
+
+            const postData = {
+                fullName: FullName,
+                email: email,
+                password: password,
+                role: role
+            };
+
+
+            if (registerStatus === "Register") {
+
+                await api.post(
+                    `/user`,
+                    postData
+                );
+
+
+            } else {
+
+                await api.put(
+                    `/user/${userId}`,
+                    postData
+                );
+
             }
-        } catch (e) { console.log(e); }
+
+
+            alert("Success");
+
+            ClearData();
+
+
+        } catch (error) {
+
+            console.log(error);
+
+        }
     };
 
-    //delete
-    const remove_User = async (e, name, id) => {
+
+
+
+    const fill_UserData = async (e, id) => {
+
         e.preventDefault();
-        if (!confirm(`Delete user: ${name}?`)) return;
+
         try {
-            const { data } = await api.delete(`/User/${id}`);
-            data.status ? load_Users() : alert(`Error: ${data.message}`);
-        } catch (e) { console.log(e); }
+
+            const response = await api.get(
+                `/user/${id}`
+            );
+
+
+            const user = response.data;
+
+
+            setUserId(user.userId);
+            setFullName(user.fullName);
+            setEmail(user.email);
+            setPassword("");
+            setRole(user.role);
+
+            setRegisterStatus("Update");
+
+
+        } catch (error) {
+
+            console.log(error);
+
+        }
+    };
+
+
+
+
+    const remove_User = async (e, name, id) => {
+
+        e.preventDefault();
+
+
+        const confirmDelete = confirm(
+            `Delete user: ${name}?`
+        );
+
+
+        if(confirmDelete){
+
+            try {
+
+                await api.delete(
+                    `/user/${id}`
+                );
+
+
+                alert("Deleted Successfully");
+
+                load_Users();
+
+
+            } catch(error){
+
+                console.log(error);
+
+            }
+
+        }
+
+    };
+
+    const ClearData = () => {
+        setUserId(0); setFullName(""); 
+        setEmail("");
+        setPassword(""); setRole("Admin");
+        setRegisterStatus("Register"); 
+        load_Users();
     };
 
     // ✅ search → searchTerm khalad la saxay

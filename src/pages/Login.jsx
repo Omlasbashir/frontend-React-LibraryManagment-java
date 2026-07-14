@@ -26,35 +26,83 @@ export default function Login() {
 
     // ─── LOGIN ───────────────────────────────────────────
     const LoginUser = async (e) => {
+
         e.preventDefault();
         setLoading(true);
-        try {
-            const { data } = await api.get(`/User`);
-            if (data.status) {
-                const foundUser = data.data.find(
-                    (u) =>
-                        u.email?.toLowerCase() === email.trim().toLowerCase() &&
-                        u.passwordHash === password
-                );
-                if (foundUser) {
-                    Swal.fire({ icon: "success", title: "Login Success",
-                        text: `Welcome back, ${foundUser.fullName}!`,
-                        timer: 1500, showConfirmButton: false });
-                    localStorage.setItem("user", JSON.stringify({
-                        userId: foundUser.userId, fullName: foundUser.fullName,
-                        email: foundUser.email, role: foundUser.role,
-                    }));
-                    setTimeout(() => navigate("/dashboard"), 1500);
-                } else {
-                    Swal.fire({ icon: "error", title: "Login Failed", text: "Invalid email or password" });
-                }
-            }
-        } catch (err) {
-            Swal.fire({ icon: "error", title: "Connection Error", text: "Could not connect to server." });
-        }
-        setLoading(false);
-    };
 
+
+        try {
+
+
+            const {data} = await api.post(
+                "/auth/login",
+                {
+                    email: email,
+                    password: password
+                }
+            );
+
+
+
+            localStorage.setItem(
+                "token",
+                data.token
+            );
+
+
+            localStorage.setItem(
+                "role",
+                data.role
+            );
+
+
+            localStorage.setItem(
+                "user",
+                JSON.stringify(data)
+            );
+
+
+
+            Swal.fire({
+
+                icon:"success",
+                title:"Login Success",
+                text:`Welcome ${data.fullName}`,
+                timer:1500,
+                showConfirmButton:false
+
+            });
+
+
+
+            setTimeout(()=>{
+
+                navigate("/dashboard");
+
+            },1500);
+
+
+
+        }catch(error){
+
+
+            Swal.fire({
+
+                icon:"error",
+                title:"Login Failed",
+                text:
+                error.response?.data?.message ||
+                "Invalid email or password"
+
+            });
+
+
+        }
+
+
+        setLoading(false);
+
+    };
     // ─── FORGOT PASSWORD ─────────────────────────────────
     const handleForgot = async (e) => {
         e.preventDefault();
