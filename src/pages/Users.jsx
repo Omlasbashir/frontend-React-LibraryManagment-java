@@ -1,7 +1,6 @@
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
-import axios from "axios";
 import api from "../services/api";
 
 export default function Users() {
@@ -20,11 +19,16 @@ export default function Users() {
 
             const response = await api.get(`/user`);
 
-            setUsers(response.data);
+            const list = Array.isArray(response.data)
+                ? response.data
+                : response.data?.data ?? [];
+
+            setUsers(list);
 
         } catch (error) {
 
             console.log(error);
+            setUsers([]);
 
         }
     };
@@ -40,15 +44,30 @@ export default function Users() {
 
         e.preventDefault();
 
+        // basic validation
+        if (!FullName.trim() || !email.trim()) {
+            alert("Fadlan buuxi Full Name iyo Email");
+            return;
+        }
+
+        if (registerStatus === "Register" && !password.trim()) {
+            alert("Fadlan geli password cusub user-ka");
+            return;
+        }
+
         try {
 
             const postData = {
                 fullName: FullName,
                 email: email,
-                password: password,
                 role: role
             };
 
+            // only include password if it was actually typed
+            // (prevents wiping the existing password on update)
+            if (password.trim()) {
+                postData.passwordHash = password;
+            }
 
             if (registerStatus === "Register") {
 
@@ -75,7 +94,12 @@ export default function Users() {
 
         } catch (error) {
 
-            console.log(error);
+            console.log(error.response?.data || error.message);
+
+            alert(
+                error.response?.data?.message ||
+                "Khalad ayaa dhacay marka user-ka la keydinayay"
+            );
 
         }
     };
@@ -94,21 +118,26 @@ export default function Users() {
             );
 
 
-            const user = response.data;
+            const user = response.data?.data ?? response.data;
 
+            if (!user) {
+                alert("User-kan lagama helin");
+                return;
+            }
 
             setUserId(user.userId);
-            setFullName(user.fullName);
-            setEmail(user.email);
+            setFullName(user.fullName || "");
+            setEmail(user.email || "");
             setPassword("");
-            setRole(user.role);
+            setRole(user.role || "Admin");
 
             setRegisterStatus("Update");
 
 
         } catch (error) {
 
-            console.log(error);
+            console.log(error.response?.data || error.message);
+            alert("Khalad ayaa dhacay marka user-ka la soo raadinayay");
 
         }
     };
@@ -142,7 +171,11 @@ export default function Users() {
 
             } catch(error){
 
-                console.log(error);
+                console.log(error.response?.data || error.message);
+                alert(
+                    error.response?.data?.message ||
+                    "Khalad ayaa dhacay marka user-ka la tirtirayay"
+                );
 
             }
 
@@ -208,7 +241,7 @@ export default function Users() {
 
                             <div>
                                 <label className="block mb-2 text-sm font-semibold text-gray-700">Full Name</label>
-                                <input type="text" placeholder="Enter full name..."
+                                <input type="text" required placeholder="Enter full name..."
                                     value={FullName} onChange={(e) => setFullName(e.target.value)}
                                     className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
                                 />
@@ -216,7 +249,7 @@ export default function Users() {
 
                             <div>
                                 <label className="block mb-2 text-sm font-semibold text-gray-700">Email</label>
-                                <input type="email" placeholder="Enter email..."
+                                <input type="email" required placeholder="Enter email..."
                                     value={email} onChange={(e) => setEmail(e.target.value)}
                                     className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
                                 />
@@ -229,7 +262,7 @@ export default function Users() {
                                         <span className="text-gray-400 font-normal ml-2 text-xs">(Leave blank to keep current)</span>
                                     )}
                                 </label>
-                                <input type="password" placeholder="Enter password..."
+                                <input type="password" required={registerStatus === "Register"} placeholder="Enter password..."
                                     value={password} onChange={(e) => setPassword(e.target.value)}
                                     className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
                                 />

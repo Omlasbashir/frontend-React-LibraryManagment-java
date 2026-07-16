@@ -74,13 +74,17 @@ export default function Categories() {
                 "/categories"
             );
 
+            const list = Array.isArray(response.data)
+                ? response.data
+                : response.data?.data ?? [];
 
-            setCategories(response.data);
+            setCategories(list);
 
 
         } catch(error) {
 
             console.log(error);
+            setCategories([]);
 
         }
 
@@ -99,14 +103,16 @@ export default function Categories() {
                 `/categories/${id}`
             );
 
+            const data = response.data?.data ?? response.data;
+
 
             setCategoryId(
-                response.data.categoryId
+                data.categoryId
             );
 
 
             setCategoryName(
-                response.data.categoryName
+                data.categoryName
             );
 
 

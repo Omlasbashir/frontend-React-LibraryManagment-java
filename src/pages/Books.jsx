@@ -4,401 +4,379 @@ import { useState, useEffect } from "react";
 import api from "../services/api";
 
 export default function Books() {
+const [search, setSearch] = useState("");
+const [bookId, setBookId] = useState(0);
+const [title, setTitle] = useState("");
+const [author, setAuthor] = useState("");
+const [isbn, setIsbn] = useState("");
+const [categoryId, setCategoryId] = useState("");
+const [quantity, setQuantity] = useState(0);
+const [categories, setCategories] = useState([]);
+const [registerStatus, setRegisterStatus] = useState("Register");
+const [books, setBooks] = useState([]);
 
-    // search
-    const [search, setSearch] = useState("");
+const ClearData = () => {
+    setBookId(0);
+    setTitle("");
+    setAuthor("");
+    setIsbn("");
+    setCategoryId("");
+    setQuantity(0);
+    setRegisterStatus("Register");
+};
 
-    // book parameters
-    const [bookId, setBookId] = useState(0);
-    const [title, setTitle] = useState("");
-    const [author, setAuthor] = useState("");
-    const [isbn, setIsbn] = useState("");
-    const [categoryId, setCategoryId] = useState("");
-    const [quantity, setQuantity] = useState(0);
+const load_Books = async () => {
+    try {
+        const response = await api.get("/books");
+        setBooks(response.data?.data ?? response.data ?? []);
+    } catch (error) {
+        console.log(error);
+        setBooks([]);
+    }
+};
 
-    // categories list (loodhan dropdown)
-    const [categories, setCategories] = useState([]);
+const load_Categories = async () => {
+    try {
+        const response = await api.get("/categories");
+        setCategories(response.data?.data ?? response.data ?? []);
+    } catch (error) {
+        console.log(error);
+        setCategories([]);
+    }
+};
 
-    const [registerStatus, setRegisterStatus] = useState("Register");
+const register_New_Book = async (e) => {
+    e.preventDefault();
 
-    const [books, setBooks] = useState([]);
+    const selectedCategoryId = Number(categoryId);
 
-    // clear form data
-    const ClearData = () => {
-        setBookId(0);
-        setTitle("");
-        setAuthor("");
-        setIsbn("");
-        setCategoryId("");
-        setQuantity(0);
-        setRegisterStatus("Register");
+    if (!selectedCategoryId || isNaN(selectedCategoryId)) {
+        alert("Please select a category");
+        return;
+    }
+
+    const postData = {
+        title,
+        author,
+        isbn,
+        categoryId: selectedCategoryId,
+        quantity: Number(quantity)
     };
 
-    // register new book / update book
-    const register_New_Book = async (e) => {
-        e.preventDefault();
+    try {
 
-        try {
-
-            const postData = {
-                title: title,
-                author: author,
-                isbn: isbn,
-                categoryId: categoryId,
-                quantity: quantity,
-            };
-
-
-            if (registerStatus === "Register") {
-
-                await api.post(
-                    "/books",
-                    postData
-                );
-
-            } else {
-
-                await api.put(
-                    `/books/${bookId}`,
-                    postData
-                );
-
-            }
-
-
-            alert("Success");
-            ClearData();
-            load_Books();
-
-
-        } catch (error) {
-
-            console.log(error);
-
+        if (registerStatus === "Register") {
+            await api.post("/books", postData);
+            alert("Book registered successfully");
+        } else {
+            await api.put(`/books/${bookId}`, postData);
+            alert("Book updated successfully");
         }
-    };
 
-    // fill book data for update
-    const fill_BookData = async (e, id) => {
+        ClearData();
+        await load_Books();
 
-        e.preventDefault();
+    } catch (error) {
+        console.log(error.response?.data || error.message);
 
-        try {
-
-            const response = await api.get(
-                `/books/${id}`
-            );
-
-
-            setBookId(
-                response.data.bookId
-            );
-
-            setTitle(
-                response.data.title
-            );
-
-            setAuthor(
-                response.data.author
-            );
-
-            setIsbn(
-                response.data.isbn
-            );
-
-            setCategoryId(
-                response.data.categoryId
-            );
-
-            setQuantity(
-                response.data.quantity
-            );
-
-            setRegisterStatus("Update");
-
-
-        } catch (error) {
-
-            console.log(error);
-
-        }
-    };
-
-    // loading books -> store in usestate
-    const load_Books = async () => {
-
-        try {
-
-            const response = await api.get(
-                "/books"
-            );
-
-
-            setBooks(response.data);
-
-
-        } catch (error) {
-
-            console.log(error);
-
-        }
-    };
-
-    // loading categories -> for dropdown
-    const load_Categories = async () => {
-
-        try {
-
-            const response = await api.get(
-                "/categories"
-            );
-
-
-            setCategories(response.data);
-
-
-        } catch (error) {
-
-            console.log(error);
-
-        }
-    };
-
-    // delete book
-    const remove_book = async (e, id, title) => {
-
-        e.preventDefault();
-
-        const confirmDelete = confirm(
-            `Delete ${title}?`
+        alert(
+            error.response?.data?.message ||
+            "Something went wrong"
         );
+    }
+};
 
-        if (confirmDelete) {
+const fill_BookData = async (e, id) => {
+    e.preventDefault();
 
-            try {
+    try {
+        const response = await api.get(`/books/${id}`);
+        const data = response.data?.data ?? response.data;
 
-                await api.delete(
-                    `/books/${id}`
-                );
+        console.log("BOOK DATA:", data);
 
+        setBookId(data.bookId);
+        setTitle(data.title || "");
+        setAuthor(data.author || "");
+        setIsbn(data.isbn || "");
+        setQuantity(data.quantity || 0);
 
-                alert("Deleted Successfully");
+        let selectedCategoryId =
+            data.categoryId ||
+            data.category?.categoryId ||
+            "";
 
-                load_Books();
+        if (!selectedCategoryId && data.categoryName) {
+            const category = categories.find(
+                cat => cat.categoryName === data.categoryName
+            );
 
-
-            } catch (error) {
-
-                console.log(error);
-
-            }
-
+            selectedCategoryId = category?.categoryId || "";
         }
-    };
 
-    useEffect(() => {
-        load_Books();
-        load_Categories();
-    }, []);
+        setCategoryId(String(selectedCategoryId));
+        setRegisterStatus("Update");
 
-    //search
-    const filteredBooks = books.filter((book) =>
-        book.title?.toLowerCase().includes(search.toLowerCase())
-    );
+    } catch (error) {
+        console.log(
+            error.response?.data ||
+            error.message
+        );
+    }
+};
 
-    return (
-        <div className="flex bg-gray-100 min-h-screen">
+const remove_book = async (e, id, title) => {
+    e.preventDefault();
 
-            <Sidebar />
+    if (!window.confirm(`Delete ${title}?`)) return;
 
-            <div className="ml-64 w-full">
+    try {
+        await api.delete(`/books/${id}`);
+        alert("Deleted Successfully");
+        await load_Books();
+    } catch (error) {
+        console.log(
+            error.response?.data ||
+            error.message
+        );
+    }
+};
 
-                <Navbar />
+useEffect(() => {
+    load_Books();
+    load_Categories();
+}, []);
 
-                <div className="p-8">
+const filteredBooks = books.filter(book =>
+    book.title?.toLowerCase().includes(search.toLowerCase())
+);
 
-                    {/* HEADER */}
-                    <div className="flex justify-between items-center mb-6">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-800"> 📚 Books </h1>
-                            <p className="text-gray-500 text-sm"> Manage library books collection</p>
-                        </div>
+return (
+    <div className="flex bg-gray-100 min-h-screen">
+
+        <Sidebar />
+
+        <div className="ml-64 w-full">
+            <Navbar />
+
+            <div className="p-8">
+
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-800">
+                            📚 Books
+                        </h1>
+                        <p className="text-gray-500 text-sm">
+                            Manage library books collection
+                        </p>
                     </div>
+                </div>
 
-                    {/* SEARCH + STATS */}
-                    <div className="flex justify-between mb-4">
+                <div className="flex justify-between mb-4">
+                    <input
+                        type="text"
+                        className="border px-3 py-2 rounded w-1/3"
+                        placeholder="Search books..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+
+                    <div className="bg-white px-4 py-2 rounded shadow text-sm">
+                        Total Books:
+                        <b className="ml-1">
+                            {filteredBooks.length}
+                        </b>
+                    </div>
+                </div>
+
+                <form
+                    onSubmit={register_New_Book}
+                    className="bg-white shadow-lg rounded-xl p-6 mb-6"
+                >
+
+                    <h2 className="text-xl font-bold text-gray-800 mb-5">
+                        {registerStatus === "Register"
+                            ? "Add New Book"
+                            : "Update Book"}
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
 
                         <input
                             type="text"
-                            className="border px-3 py-2 rounded w-1/3"
-                            placeholder="Search books..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            required
+                            placeholder="Enter book title..."
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="border border-gray-300 rounded-lg px-4 py-3"
                         />
 
-                        <div className="bg-white px-4 py-2 rounded shadow text-sm">
-                            Total Books: <b>{filteredBooks.length}</b>
-                        </div>
+                        <input
+                            type="text"
+                            required
+                            placeholder="Enter author name..."
+                            value={author}
+                            onChange={(e) => setAuthor(e.target.value)}
+                            className="border border-gray-300 rounded-lg px-4 py-3"
+                        />
+
+                        <input
+                            type="text"
+                            required
+                            placeholder="Enter ISBN..."
+                            value={isbn}
+                            onChange={(e) => setIsbn(e.target.value)}
+                            className="border border-gray-300 rounded-lg px-4 py-3"
+                        />
 
                     </div>
 
-                    {/* ADD / UPDATE BOOK FORM */}
-                    <form onSubmit={register_New_Book} className="bg-white shadow-lg rounded-xl p-6 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
-                        <h2 className="text-xl font-bold text-gray-800 mb-5">
-                            {registerStatus === "Register" ? "Add New Book" : "Update Book"}
-                        </h2>
+                        <select
+                            required
+                            value={categoryId}
+                            onChange={(e) => setCategoryId(e.target.value)}
+                            className="border border-gray-300 rounded-lg px-4 py-3"
+                        >
+                            <option value="">
+                                Select category
+                            </option>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-
-                            <div>
-                                <label className="block mb-2 text-sm font-semibold text-gray-700">
-                                    Title
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="Enter book title..."
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    value={title}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block mb-2 text-sm font-semibold text-gray-700">
-                                    Author
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="Enter author name..."
-                                    onChange={(e) => setAuthor(e.target.value)}
-                                    value={author}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block mb-2 text-sm font-semibold text-gray-700">
-                                    ISBN
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="Enter ISBN..."
-                                    onChange={(e) => setIsbn(e.target.value)}
-                                    value={isbn}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
-                                />
-                            </div>
-
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-
-                            <div>
-                                <label className="block mb-2 text-sm font-semibold text-gray-700">
-                                    CategoryId
-                                </label>
-                                <select
-                                    value={categoryId}
-                                    onChange={(e) => setCategoryId(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
+                            {categories.map((cat) => (
+                                <option
+                                    key={cat.categoryId}
+                                    value={cat.categoryId}
                                 >
-                                    <option value="">Select category</option>
-                                    {categories.map((cat) => (
-                                        <option key={cat.categoryId} value={cat.categoryId}>
-                                            {cat.categoryId} - {cat.categoryName}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                                    {cat.categoryId} - {cat.categoryName}
+                                </option>
+                            ))}
+                        </select>
 
-                            <div>
-                                <label className="block mb-2 text-sm font-semibold text-gray-700">
-                                    Quantity
-                                </label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    placeholder="0"
-                                    onChange={(e) => setQuantity(Number(e.target.value))}
-                                    value={quantity}
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
-                                />
-                            </div>
+                        <input
+                            type="number"
+                            min="0"
+                            required
+                            value={quantity}
+                            onChange={(e) =>
+                                setQuantity(Number(e.target.value))
+                            }
+                            className="border border-gray-300 rounded-lg px-4 py-3"
+                        />
 
-                            <div className="flex gap-2 md:col-span-2">
-                                <button type="submit" className="bg-gray-900 hover:bg-gray-700 text-white px-6 py-3 rounded-lg w-full">
-                                    {registerStatus === "Register" ? "Add Book" : "Update Book"}
-                                </button>
-                                <button type="button" onClick={ClearData} className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg w-full">
-                                    Clear
-                                </button>
-                            </div>
+                        <div className="flex gap-2 md:col-span-2">
+
+                            <button
+                                type="submit"
+                                className="bg-gray-900 hover:bg-gray-700 text-white px-6 py-3 rounded-lg w-full"
+                            >
+                                {registerStatus === "Register"
+                                    ? "Add Book"
+                                    : "Update Book"}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={ClearData}
+                                className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg w-full"
+                            >
+                                Clear
+                            </button>
 
                         </div>
 
-                    </form>
-
-                    {/* TABLE */}
-                    <div className="bg-white shadow rounded-xl overflow-hidden">
-
-                        <table className="w-full">
-
-                            <thead className="bg-gray-900 text-white">
-                                <tr>
-                                    <th className="p-3 text-left">ID</th>
-                                    <th className="p-3 text-left">Title</th>
-                                    <th className="p-3 text-left">Author</th>
-                                    <th className="p-3 text-left">ISBN</th>
-                                    <th className="p-3 text-left">CategoryId</th>
-                                    <th className="p-3 text-left">Qty</th>
-                                    <th className="p-3 text-center">Action</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {filteredBooks.map((book) => (
-                                    <tr key={book.bookId} className="border-b hover:bg-gray-50">
-
-                                        <td className="p-3">{book.bookId}</td>
-                                        <td className="p-3 font-semibold text-gray-800">{book.title}</td>
-                                        <td className="p-3 text-gray-600"> {book.author} </td>
-                                        <td className="p-3 text-gray-600"> {book.isbn} </td>
-
-                                        <td className="p-3">
-                                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-sm">
-                                                {book.categoryId}
-                                            </span>
-                                        </td>
-
-                                        <td className="p-3 text-gray-600">{book.quantity}</td>
-
-                                        <td className="p-3 flex justify-center gap-2">
-                                            <button
-                                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
-                                                onClick={(e) => fill_BookData(e, book.bookId)}> Edit
-                                            </button>
-
-                                            <button
-                                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-                                                onClick={(e) => remove_book(e, book.bookId, book.title)}> Delete
-                                            </button>
-                                        </td>
-
-                                    </tr>
-                                ))}
-                            </tbody>
-
-                        </table>
-
                     </div>
+
+                </form>
+
+                <div className="bg-white shadow rounded-xl overflow-hidden">
+
+                    <table className="w-full">
+
+                        <thead className="bg-gray-900 text-white">
+                            <tr>
+                                <th className="p-3 text-left">ID</th>
+                                <th className="p-3 text-left">Title</th>
+                                <th className="p-3 text-left">Author</th>
+                                <th className="p-3 text-left">ISBN</th>
+                                <th className="p-3 text-left">Category</th>
+                                <th className="p-3 text-left">Qty</th>
+                                <th className="p-3 text-center">Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {filteredBooks.map((book) => (
+                                <tr
+                                    key={book.bookId}
+                                    className="border-b hover:bg-gray-50"
+                                >
+                                    <td className="p-3">
+                                        {book.bookId}
+                                    </td>
+
+                                    <td className="p-3 font-semibold">
+                                        {book.title}
+                                    </td>
+
+                                    <td className="p-3 text-gray-600">
+                                        {book.author}
+                                    </td>
+
+                                    <td className="p-3 text-gray-600">
+                                        {book.isbn}
+                                    </td>
+
+                                    <td className="p-3">
+                                        {book.categoryId ??
+                                            book.category?.categoryId ??
+                                            "-"}
+                                    </td>
+
+                                    <td className="p-3 text-gray-600">
+                                        {book.quantity}
+                                    </td>
+
+                                    <td className="p-3 flex justify-center gap-2">
+
+                                        <button
+                                            className="bg-yellow-500 text-white px-3 py-1 rounded"
+                                            onClick={(e) =>
+                                                fill_BookData(
+                                                    e,
+                                                    book.bookId
+                                                )
+                                            }
+                                        >
+                                            Edit
+                                        </button>
+
+                                        <button
+                                            className="bg-red-600 text-white px-3 py-1 rounded"
+                                            onClick={(e) =>
+                                                remove_book(
+                                                    e,
+                                                    book.bookId,
+                                                    book.title
+                                                )
+                                            }
+                                        >
+                                            Delete
+                                        </button>
+
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+
+                    </table>
 
                 </div>
 
             </div>
         </div>
-    );
+    </div>
+);
+
+
 }

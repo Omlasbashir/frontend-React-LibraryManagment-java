@@ -1,7 +1,6 @@
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { useState, useEffect } from "react";
-import axios from "axios";
 import api from "../services/api";
 
 export default function BorrowTransactions() {
@@ -21,7 +20,7 @@ export default function BorrowTransactions() {
 
     const [registerStatus, setRegisterStatus] = useState("Register");
     const [borrows, setBorrows] = useState([]);
-   
+
 
     const getMemberName = (borrow) => {
         return borrow.member?.fullName || "";
@@ -42,7 +41,6 @@ export default function BorrowTransactions() {
         setDueDate("");
         setStatus("Borrowed");
         setRegisterStatus("Register");
-        load_Borrows();
     };
 
 
@@ -50,6 +48,11 @@ export default function BorrowTransactions() {
     const register_New_Borrow = async (e) => {
 
         e.preventDefault();
+
+        if (!memberId || !bookId) {
+            alert("Fadlan dooro Member iyo Book");
+            return;
+        }
 
         try {
 
@@ -62,16 +65,16 @@ export default function BorrowTransactions() {
                 },
                 borrowDate,
                 dueDate,
-                returnDate,
+                returnDate: returnDate || null,
                 status
             };
 
 
-            if(registerStatus === "Register"){
+            if (registerStatus === "Register") {
 
                 await api.post("/BorrowTransactions", postData);
 
-            }else{
+            } else {
 
                 await api.put(`/BorrowTransactions/${borrowId}`, postData);
 
@@ -80,11 +83,16 @@ export default function BorrowTransactions() {
 
             alert("Success");
             ClearData();
+            await load_Borrows();
 
 
-        }catch(error){
+        } catch (error) {
 
-            console.log(error);
+            console.log(error.response?.data || error.message);
+            alert(
+                error.response?.data?.message ||
+                "Khalad ayaa dhacay"
+            );
 
         }
     };
@@ -92,30 +100,39 @@ export default function BorrowTransactions() {
 
 
     // GET ONE
-    const fill_BorrowData = async (e,id)=>{
+    const fill_BorrowData = async (e, id) => {
 
         e.preventDefault();
 
-        try{
+        try {
 
             const response = await api.get(`/BorrowTransactions/${id}`);
 
-            const data = response.data.data; // muhiim
+            // safe fallback: works whether backend wraps in { data: {...} } or not
+            const data = response.data?.data ?? response.data;
+
+            console.log("BORROW DATA:", data);
+
+            if (!data) {
+                alert("Borrow record lama helin");
+                return;
+            }
 
             setBorrowId(data.borrowId);
             setMemberId(data.member?.memberId || "");
             setBookId(data.book?.bookId || "");
-            setBorrowDate(data.borrowDate?.substring(0,10));
-            setDueDate(data.dueDate?.substring(0,10));
-            setReturnDate(data.returnDate?.substring(0,10));
-            setStatus(data.status);
+            setBorrowDate(data.borrowDate?.substring(0, 10) || "");
+            setDueDate(data.dueDate?.substring(0, 10) || "");
+            setReturnDate(data.returnDate?.substring(0, 10) || "");
+            setStatus(data.status || "Borrowed");
 
             setRegisterStatus("Update");
 
 
-        }catch(error){
+        } catch (error) {
 
-            console.log(error);
+            console.log(error.response?.data || error.message);
+            alert("Khalad ayaa dhacay marka la soo raadinayay borrow-ka");
 
         }
 
@@ -123,14 +140,18 @@ export default function BorrowTransactions() {
 
 
 
-    // GET ALL
+    // GET ALL BORROWS
     const load_Borrows = async () => {
         try {
             const response = await api.get("/BorrowTransactions");
 
-            setBorrows(response.data || []);
+            const list = Array.isArray(response.data)
+                ? response.data
+                : response.data?.data ?? [];
 
-        } catch(error){
+            setBorrows(list);
+
+        } catch (error) {
             console.log(error);
             setBorrows([]);
         }
@@ -138,13 +159,18 @@ export default function BorrowTransactions() {
 
 
 
+    // GET ALL MEMBERS
     const load_Members = async () => {
         try {
             const response = await api.get("/members");
 
-            setMembers(response.data || []);
+            const list = Array.isArray(response.data)
+                ? response.data
+                : response.data?.data ?? [];
 
-        } catch(error){
+            setMembers(list);
+
+        } catch (error) {
             console.log(error);
             setMembers([]);
         }
@@ -152,13 +178,18 @@ export default function BorrowTransactions() {
 
 
 
+    // Load Books
     const load_Books = async () => {
         try {
             const response = await api.get("/books");
 
-            setBooks(response.data || []);
+            const list = Array.isArray(response.data)
+                ? response.data
+                : response.data?.data ?? [];
 
-        } catch(error){
+            setBooks(list);
+
+        } catch (error) {
             console.log(error);
             setBooks([]);
         }
@@ -167,13 +198,13 @@ export default function BorrowTransactions() {
 
 
     // DELETE
-    const remove_Borrow = async(e,id)=>{
+    const remove_Borrow = async (e, id) => {
 
         e.preventDefault();
 
-        if(confirm("Delete this borrow?")){
+        if (confirm("Delete this borrow?")) {
 
-            try{
+            try {
 
                 await api.delete(`/BorrowTransactions/${id}`);
 
@@ -182,9 +213,10 @@ export default function BorrowTransactions() {
                 load_Borrows();
 
 
-            }catch(error){
+            } catch (error) {
 
-                console.log(error);
+                console.log(error.response?.data || error.message);
+                alert("Khalad ayaa dhacay marka la tirtirayay");
 
             }
 
@@ -225,7 +257,7 @@ export default function BorrowTransactions() {
 
                     {/* SEARCH + STATS */}
                     <div className="flex justify-between mb-4">
-                        <input type="text"className="border px-3 py-2 rounded w-1/3" placeholder="Search by member name..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                        <input type="text" className="border px-3 py-2 rounded w-1/3" placeholder="Search by member name..." value={search} onChange={(e) => setSearch(e.target.value)} />
                         <div className="bg-white px-4 py-2 rounded shadow text-sm">
                             Total Borrows: <b>{filteredBorrows.length}</b>
                         </div>
@@ -244,7 +276,7 @@ export default function BorrowTransactions() {
                                     <option value="">Select member</option>
                                     {members.map((m) => (
                                         <option key={m.memberId} value={m.memberId}>
-                                            {m.memberId} 
+                                            {m.memberId}
                                         </option>
                                     ))}
                                 </select>
@@ -252,12 +284,12 @@ export default function BorrowTransactions() {
 
                             <div>
                                 <label className="block mb-2 text-sm font-semibold text-gray-700">Book</label>
-                                <select value={bookId} onChange={(e) => setBookId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none">    
-                                   
+                                <select value={bookId} onChange={(e) => setBookId(e.target.value)} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none">
+
                                     <option value="">Select book</option>
                                     {books.map((b) => (
                                         <option key={b.bookId} value={b.bookId}>
-                                            {b.bookId} 
+                                            {b.bookId}
                                         </option>
                                     ))}
                                 </select>
@@ -339,76 +371,76 @@ export default function BorrowTransactions() {
 
                             <tbody>
 
-                                {filteredBorrows.map((borrow)=>(
+                                {filteredBorrows.map((borrow) => (
 
-                                <tr key={borrow.borrowId} className="border-b hover:bg-gray-50">
+                                    <tr key={borrow.borrowId} className="border-b hover:bg-gray-50">
 
-                                <td className="p-3">
-                                    {borrow.borrowId}
-                                </td>
-
-
-                                <td className="p-3 font-semibold text-gray-800">
-                                    {getMemberName(borrow)}
-                                </td>
+                                        <td className="p-3">
+                                            {borrow.borrowId}
+                                        </td>
 
 
-                                <td className="p-3 text-gray-600">
-                                    {getBookTitle(borrow)}
-                                </td>
+                                        <td className="p-3 font-semibold text-gray-800">
+                                            {getMemberName(borrow)}
+                                        </td>
 
 
-                                <td className="p-3 text-gray-500">
-                                    {borrow.borrowDate?.substring(0,10)}
-                                </td>
+                                        <td className="p-3 text-gray-600">
+                                            {getBookTitle(borrow)}
+                                        </td>
 
 
-                                <td className="p-3 text-gray-500">
-                                    {borrow.dueDate?.substring(0,10)}
-                                </td>
+                                        <td className="p-3 text-gray-500">
+                                            {borrow.borrowDate?.substring(0, 10)}
+                                        </td>
 
 
-                                <td className="p-3 text-gray-500">
-                                    {borrow.returnDate?.substring(0,10)}
-                                </td>
+                                        <td className="p-3 text-gray-500">
+                                            {borrow.dueDate?.substring(0, 10)}
+                                        </td>
 
 
-                                <td className="p-3">
-                                <span className={`px-2 py-1 rounded text-sm font-medium
+                                        <td className="p-3 text-gray-500">
+                                            {borrow.returnDate?.substring(0, 10)}
+                                        </td>
+
+
+                                        <td className="p-3">
+                                            <span className={`px-2 py-1 rounded text-sm font-medium
                                 ${borrow.status === "Returned"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-yellow-100 text-yellow-700"
-                                }`}>
-                                {borrow.status}
-                                </span>
-                                </td>
+                                                    ? "bg-green-100 text-green-700"
+                                                    : "bg-yellow-100 text-yellow-700"
+                                                }`}>
+                                                {borrow.status}
+                                            </span>
+                                        </td>
 
 
-                                <td className="p-3 flex justify-center gap-2">
+                                        <td className="p-3 flex justify-center gap-2">
 
-                                <button
-                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
-                                onClick={(e)=>fill_BorrowData(e,borrow.borrowId)}
-                                >
-                                Edit
-                                </button>
-
-
-                                <button
-                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-                                onClick={(e)=>remove_Borrow(e,borrow.borrowId)}
-                                >
-                                Delete
-                                </button>
-
-                                </td>
+                                            <button
+                                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
+                                                onClick={(e) => fill_BorrowData(e, borrow.borrowId)}
+                                            >
+                                                Edit
+                                            </button>
 
 
-                                </tr>
+                                            <button
+                                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                                                onClick={(e) => remove_Borrow(e, borrow.borrowId)}
+                                            >
+                                                Delete
+                                            </button>
+
+                                        </td>
+
+
+                                    </tr>
 
                                 ))}
 
-                                </tbody>
+                            </tbody>
                         </table>
 
                     </div>
