@@ -30,23 +30,18 @@ export default function Members() {
     const load_Members = async () => {
         try {
             const response = await api.get("/members");
-
             const data = response.data.data || response.data;
             setMembers(Array.isArray(data) ? data : []);
         } catch (error) {
             console.log(error);
         }
     };
-
     // Get Member By Id
     const fill_MemberData = async (e, memberId) => {
         e.preventDefault();
-
         try {
             const response = await api.get(`/members/${memberId}`);
-
             const member = response.data.data || response.data;
-
             setMemberId(member.memberId);
             setFullName(member.fullName);
             setEmail(member.email);
@@ -62,7 +57,6 @@ export default function Members() {
     // Register / Update
     const register_New_Member = async (e) => {
         e.preventDefault();
-
         const postData = {
             fullName,
             email,
@@ -76,20 +70,16 @@ export default function Members() {
             } else {
                 await api.put(`/members/${memberId}`, postData);
             }
-
             ClearData();
             load_Members();
         } catch (error) {
             console.log(error);
         }
     };
-
     // Delete
     const remove_Member = async (e, fullName, memberId) => {
         e.preventDefault();
-
         if (!confirm(`Delete ${fullName}?`)) return;
-
         try {
             await api.delete(`/members/${memberId}`);
             load_Members();
